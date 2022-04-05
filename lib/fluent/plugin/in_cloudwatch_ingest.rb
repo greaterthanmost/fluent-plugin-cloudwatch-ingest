@@ -54,6 +54,8 @@ module Fluent::Plugin
     config_param :telemetry, :bool, default: false
     desc 'Statsd endpoint to which telemetry should be written'
     config_param :statsd_endpoint, :string, default: 'localhost'
+    desc 'When true, SSL peer certificates are verified when establishing a connection'
+    config_param :ssl_verify_peer, :bool, default: true
     config_section :parse do
       config_set_default :@type, 'cloudwatch_ingest'
       desc 'Regular expression with which to parse the event message'
@@ -171,11 +173,13 @@ module Fluent::Plugin
           response = if !log_group_prefix.empty?
                        @aws.describe_log_groups(
                          log_group_name_prefix: log_group_prefix,
-                         next_token: next_token
+                         next_token: next_token,
+                         ssl_verify_peer: ssl_verify_peer
                        )
                      else
                        @aws.describe_log_groups(
-                         next_token: next_token
+                         next_token: next_token,
+                         ssl_verify_peer: ssl_verify_peer
                        )
                      end
 
@@ -457,7 +461,7 @@ module Fluent::Plugin
         end
       end
 
-      def save
+      def save  
         statefile.rewind
         statefile.truncate(0)
         statefile.write(Psych.dump(@new_store))
